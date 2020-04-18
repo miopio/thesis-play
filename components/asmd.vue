@@ -59,18 +59,24 @@ export default {
         .domain([new Date(1980, 1, 1), new Date(2018, 12, 31)])
     var y = d3.scaleLinear()
         .range([this.height, 0])
-        
+        .domain([7000, 9000])
+
+    // takes a string of format 'Incident 1234`
+    // and returns `1234`
+    var parseIncidentNumber = function(s) {
+        return s.split(' ')[1];
+    };
 
     // this is the main graph
     const svg = d3
       .select(this.$refs.asmdCircleGraphSVG)
       // set origin to the mid-point of the div(?)
-      .attr("viewBox", [
-        -this.width / 2,
-        -this.height / 2,
-        this.width,
-        this.height
-      ])
+      // .attr("viewBox", [
+      //   -this.width / 2,
+      //   -this.height / 2,
+      //   this.width,
+      //   this.height
+      // ])
       .attr("width", this.width)
       .attr("height", this.height);
     
@@ -80,11 +86,23 @@ export default {
     .enter()
     .append("circle")
       .attr("cx", function (d) { return x(parseDate(d['Outcome Year'])); } )
-      .attr("cy", function (d) { return 200; } )
+      .attr("cy", function (d) { return y(parseIncidentNumber(d['Incident Number'])); } )
       .attr("r", 20)
       .style("fill", "#69b3a2")
       .style("opacity", "0.7")
       .attr("stroke", "black")
+
+    // add x axis
+    svg.append("g")
+      .style("font", "12px futura-pt")
+      .attr("class", "axis axis--x")
+      .call(d3.axisBottom(x));
+
+    // add y axis
+    svg.append("g")
+      .style("font", "12px futura-pt")
+      .attr("class", "axis axis--y")
+      .call(d3.axisRight(y));
   },
   watch: {
     }
