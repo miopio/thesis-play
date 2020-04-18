@@ -47,9 +47,7 @@ export default {
 
     // this exists, because it is defined as `required` in the props
     const asmdData = this.asmdData;
-    
-    // prepare the data for drawing
-        
+
     // we need this to convert a date of the form 2000 to 2000-01-01:12:00:000
     var parseDate = d3.timeParse("%Y");
 
@@ -59,6 +57,8 @@ export default {
         .domain([new Date(1980, 1, 1), new Date(2018, 12, 31)])
     var y = d3.scaleLinear()
         .range([this.height, 0])
+        // this is incident numbers, typically ranging
+        // between 7k and 9k
         .domain([7000, 9000])
 
     // takes a string of format 'Incident 1234`
@@ -70,16 +70,10 @@ export default {
     // this is the main graph
     const svg = d3
       .select(this.$refs.asmdCircleGraphSVG)
-      // set origin to the mid-point of the div(?)
-      // .attr("viewBox", [
-      //   -this.width / 2,
-      //   -this.height / 2,
-      //   this.width,
-      //   this.height
-      // ])
       .attr("width", this.width)
       .attr("height", this.height);
     
+    // add our circles
     svg.append('g')
     .selectAll("dot")
     .data(asmdData) 
