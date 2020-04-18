@@ -48,6 +48,26 @@ export default {
     // this exists, because it is defined as `required` in the props
     const asmdData = this.asmdData;
 
+    // naive stem identifier
+    var isStem = function(s) {
+        // array of stem substrings
+        var stemNames = ["math", "physic", "chemistry", "medicine", "engineering", "neuro", "bio"];
+        var containsName = function(name) {
+          return !(s.toLowerCase().indexOf(name) === -1);
+        }
+        // array of true or false, where true if includes any of stemNames
+        var res = stemNames.map(containsName);
+        // return true if _any_ of the results are true
+        return res.some(function(b){ return b === true ;})
+    }
+
+    // filter out asmdData that's a stem!
+    var myStems = this.asmdData.filter(function(element){
+      var toInspect = element['Discipline'];
+      if(toInspect.length < 1){ return false; }
+      return isStem(toInspect);
+    })
+
     // we need this to convert a date of the form 2000 to 2000-01-01:12:00:000
     var parseDate = d3.timeParse("%Y");
 
@@ -55,11 +75,21 @@ export default {
     var x = d3.scaleTime()
         .rangeRound([0,this.width])
         .domain([new Date(1980, 1, 1), new Date(2018, 12, 31)])
+
+    // create a histogram
+    var histogram = d3.histogram()
+      .domain(x.domain())
+      .thresholds(x.ticks(38))
+      .value(function(d) { return parseDate(d['Outcome Year']);})
+    
+    var bins = histogram(myStems);
+
+    console.log(bins)
+
+    // Y axis: scale and draw:
     var y = d3.scaleLinear()
-        .range([this.height, 0])
-        // this is incident numbers, typically ranging
-        // between 7k and 9k
-        .domain([7000, 9000])
+      .range([this.height, 0]);
+      y.domain([0, d3.max(bins, function(d) { return d.length; })]);
 
     // takes a string of format 'Incident 1234`
     // and returns `1234`
@@ -67,24 +97,24 @@ export default {
         return s.split(' ')[1];
     };
 
+    console.log("🤟 nr stems: ", myStems.length);
+ 
     // this is the main graph
     const svg = d3
       .select(this.$refs.asmdCircleGraphSVG)
       .attr("width", this.width)
       .attr("height", this.height);
-    
-    // add our circles
-    svg.append('g')
-    .selectAll("dot")
-    .data(asmdData) 
-    .enter()
-    .append("circle")
-      .attr("cx", function (d) { return x(parseDate(d['Outcome Year'])); } )
-      .attr("cy", function (d) { return y(parseIncidentNumber(d['Incident Number'])); } )
-      .attr("r", 20)
-      .style("fill", "#69b3a2")
-      .style("opacity", "0.7")
-      .attr("stroke", "black")
+
+    // append the bar rectangles to the svg element
+    svg.selectAll("rect")
+      .data(bins)
+      .enter()
+      .append("rect")
+        .attr("x", 1)
+        .attr("transform", function(d) { return "translate(" + x(d.x0) + "," + y(d.length) + ")"; })
+        .attr("width", function(d) { return (d.x1) - x(d.x0) -1 ; })
+        .attr("height", function(d) { return y(d.length); })
+        .style("fill", "#29b3a2")
 
     // add x axis
     svg.append("g")
@@ -97,6 +127,7 @@ export default {
       .style("font", "12px futura-pt")
       .attr("class", "axis axis--y")
       .call(d3.axisRight(y));
+
   },
   watch: {
     }
